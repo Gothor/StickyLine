@@ -63,7 +63,7 @@ const Constants = {
         return false;
       }
       
-      if (!e.shiftKey) {
+      if (!e.ctrlKey) {
         for (let o of objects)
           o.setSelected(false);
       }
@@ -566,10 +566,20 @@ class Function {
         this.shapeNode = document.createElement('div').addClass('selection');
         this.selecting = false;
         canvas.append(this.shapeNode);
+        this.previouslySelected = null;
     }
   
     onMouseDown(e) {
-      unselectAll();
+      if (e.ctrlKey) {
+        this.previouslySelected = [];
+        for (let o of objects) {
+            if (o instanceof ShapeObject && o.selected) {
+                this.previouslySelected.push(o);
+            }
+        }
+      } else {
+        unselectAll();
+      }
 
       if (e.button !== 0)
         return;
@@ -586,6 +596,9 @@ class Function {
         unselectAll();
         this.setDimensions(e.clientX - this.rect.x, e.clientY - this.rect.y);
 
+        for (let o of this.previouslySelected) {
+            o.setSelected(true);
+        }
       for (let o of objects) {
           if (o instanceof ShapeObject && this.includes(o)) {
             o.setSelected(true);
