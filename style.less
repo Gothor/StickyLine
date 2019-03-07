@@ -1,0 +1,90 @@
+* {
+    user-select: none;
+  }
+  
+  html, body, #canvas {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    position: absolute;
+    overflow: hidden;
+  }
+  
+  #toolbox {
+    position: absolute;
+    z-index: 1000;
+    background-image: linear-gradient(90deg, #8f8f8f, #999);
+    list-style: none;
+    padding: 0;
+    border: 1px solid #333;
+    left: 10px;
+    top: 10px;
+    box-shadow: 2px 1px 3px #aaa;
+    
+    .tool {
+      background-image: linear-gradient(#ccc, #aaa);
+      border: 1px solid #555;
+      cursor: pointer;
+      padding: 5px;
+      margin: 5px;
+      
+      &:hover {
+        background-image: linear-gradient(#aaa, #ccc);
+      }
+      
+      &.selected {
+        background-image: linear-gradient(#888, #555)
+      }
+    }
+  }
+  
+  .canvas-object {
+    transition: box-shadow 0.1s linear;
+    border: 2px solid black;
+    position: absolute;
+    
+    &:hover {
+      box-shadow: 0 0 20px green;
+    }
+  }
+  
+  .sticky-line {
+    
+    &.vertical {
+      top: 0;
+      bottom: 0;
+    }
+  
+    &.horizontal {
+      left: 0;
+      right: 0;
+    }
+  }
+  
+  .ellipse,
+  .rectangle {
+    z-index: 10;
+  }
+  
+  .ellipse {
+    border: 4px solid black;
+    border-radius: 50%;
+    
+    background-color: blue;
+  }
+  
+  .rectangle {
+    border: 4px solid black;
+    
+    background-color: green;
+  }
+  
+  .selected {
+    border-color: gray;
+  }
+
+  .selection {
+      position: absolute;
+      border: 1px dashed #888;
+  }
+  
