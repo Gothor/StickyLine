@@ -566,7 +566,7 @@ class Function {
         this.shapeNode = document.createElement('div').addClass('selection');
         this.selecting = false;
         canvas.append(this.shapeNode);
-        this.previouslySelected = null;
+        this.previouslySelected = [];
     }
   
     onMouseDown(e) {
