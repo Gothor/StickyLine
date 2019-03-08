@@ -161,29 +161,37 @@ class StickyLine extends CanvasObject {
 
     reorder() {
         let otherLines = this.getOtherLines();
-        let sortFunction;
-        let length;
+        for (let d of this.dependencies) {
+            for (let o of otherLines) {
+                let i = o.dependencies.indexOf(d);
+                if (i >= 0) {
+                    o.dependencies.splice(i, 1);
+                }
+            }
+        }
         if (this.direction === Constants.HORIZONTAL) {
             this.dependencies.sort((a, b) => a.position.x - b.position.x);
-            this.length = parseInt(getComputedStyle(objects[0].domNode)["width"]);
-            this.gap = this.length / (this.dependencies.length + 1);
-            for (let i = 0; i < this.dependencies.length; i++) {
-                this.dependencies[i].position.x = this.gap * (i + 1);
-                this.dependencies[i].updatePosition();
+            let dependenciesLength = this.dependencies.reduce((a, b) => a + b.width + 8, 0);
+            let length = parseInt(getComputedStyle(this.domNode)["width"]) - dependenciesLength;
+            let gap = length / (this.dependencies.length + 1);
+            let distance = 0;
+            for (let d of this.dependencies) {
+                distance += gap + (d.height + 8) / 2;
+                d.position.x = distance;
+                d.updatePosition();
+                distance += (d.height + 8) / 2;
             }
         } else {
             this.dependencies.sort((a, b) => a.position.y - b.position.y);
-            this.length = parseInt(getComputedStyle(objects[0].domNode)["height"]);
-            this.gap = this.length / (this.dependencies.length + 1);
-            for (let i = 0; i < this.dependencies.length; i++) {
-                this.dependencies[i].position.y = this.gap * (i + 1);
-                this.dependencies[i].updatePosition();
-            }
-        }
-        console.log(otherLines);
-        for (let d of this.dependencies) {
-            for (let o of otherLines) {
-                d.unstickFrom(o);
+            let dependenciesLength = this.dependencies.reduce((a, b) => a + b.height + 8, 0);
+            let length = parseInt(getComputedStyle(this.domNode)["height"]) - dependenciesLength;
+            let gap = length / (this.dependencies.length + 1);
+            let distance = 0;
+            for (let d of this.dependencies) {
+                distance += gap + (d.width + 8) / 2;
+                d.position.y = distance;
+                d.updatePosition();
+                distance += (d.width + 8) / 2;
             }
         }
     }
@@ -836,7 +844,7 @@ class HorizontalAlignment extends Command {
 class DistributeLine extends Function {
 
     constructor() {
-        super("Distribute line");
+        super("Distribute elements");
         
         this.disable();
     }
