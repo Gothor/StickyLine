@@ -861,6 +861,62 @@ class HorizontalAlignment extends Command {
 
 }
 
+class VerticalDistribution extends Command {
+
+    constructor() {
+        super('Vertical Distribution');
+    }
+
+    getSelectedObjects() {
+        return objects.filter(o => o instanceof ShapeObject && o.selected);
+    }
+
+    onClick(e) {
+        let selected = this.getSelectedObjects();
+
+        selected.sort((a, b) => a.position.y - b.position.y);
+        let selectedLength = selected.reduce((a, b) => a + b.height + 8, 0);
+        let length = window.innerHeight - selectedLength;
+        let gap = length / (selected.length + 1);
+        let distance = 0;
+        for (let s of selected) {
+            distance += gap + (s.height + 8) / 2;
+            s.position.y = distance;
+            s.updatePosition();
+            distance += (s.height + 8) / 2;
+        }
+    }
+    
+}
+
+class HorizontalDistribution extends Command {
+
+    constructor() {
+        super('Horizontal Distribution');
+    }
+
+    getSelectedObjects() {
+        return objects.filter(o => o instanceof ShapeObject && o.selected);
+    }
+
+    onClick(e) {
+        let selected = this.getSelectedObjects();
+
+        selected.sort((a, b) => a.position.x - b.position.x);
+        let selectedLength = selected.reduce((a, b) => a + b.width + 8, 0);
+        let length = window.innerWidth - selectedLength;
+        let gap = length / (selected.length + 1);
+        let distance = 0;
+        for (let s of selected) {
+            distance += gap + (s.width + 8) / 2;
+            s.position.x = distance;
+            s.updatePosition();
+            distance += (s.width + 8) / 2;
+        }
+    }
+    
+}
+
 class DistributeLine extends Function {
 
     constructor() {
@@ -929,6 +985,8 @@ function createToolbox() {
     tools.push(new HorizontalLine());
     tools.push(new VerticalAlignment());
     tools.push(new HorizontalAlignment());
+    tools.push(new VerticalDistribution());
+    tools.push(new HorizontalDistribution());
     tools.push(new DistributeLine());
 
     for (let tool of tools) {
