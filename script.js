@@ -167,6 +167,7 @@ class StickyLine extends CanvasObject {
                 if (i >= 0) {
                     o.dependencies.splice(i, 1);
                 }
+                o.setSpread(false);
             }
         }
         if (this.direction === Constants.HORIZONTAL) {
@@ -245,6 +246,16 @@ class StickyLine extends CanvasObject {
         } else {
             this.setPosition(this.startPosition + e.clientX - mousePositionStart.x);
         }
+        
+        for (let o of objects) {
+            if (!(o instanceof StickyLine) && !this.dependencies.includes(o) && o.isCloseOf(this)) {
+                if (this.direction === Constants.HORIZONTAL) {
+                    this.setPosition(o.position.y);
+                } else {
+                    this.setPosition(o.position.x);
+                }
+            }
+        }
 
         for (let o of this.dependencies) {
             if (this.direction === Constants.HORIZONTAL) {
@@ -256,6 +267,15 @@ class StickyLine extends CanvasObject {
         }
 
         return true;
+    }
+
+    onMouseUp(e) {
+        super.onMouseUp(e);
+        for (let o of objects) {
+            if (!(o instanceof StickyLine) && !this.dependencies.includes(o) && o.isCloseOf(this)) {
+                this.addDependance(o);
+            }
+        }
     }
 
 }
