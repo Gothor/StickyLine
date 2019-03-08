@@ -176,10 +176,10 @@ class StickyLine extends CanvasObject {
             let gap = length / (this.dependencies.length + 1);
             let distance = 0;
             for (let d of this.dependencies) {
-                distance += gap + (d.height + 8) / 2;
+                distance += gap + (d.width + 8) / 2;
                 d.position.x = distance;
                 d.updatePosition();
-                distance += (d.height + 8) / 2;
+                distance += (d.width + 8) / 2;
             }
         } else {
             this.dependencies.sort((a, b) => a.position.y - b.position.y);
@@ -188,10 +188,10 @@ class StickyLine extends CanvasObject {
             let gap = length / (this.dependencies.length + 1);
             let distance = 0;
             for (let d of this.dependencies) {
-                distance += gap + (d.width + 8) / 2;
+                distance += gap + (d.height + 8) / 2;
                 d.position.y = distance;
                 d.updatePosition();
-                distance += (d.width + 8) / 2;
+                distance += (d.height + 8) / 2;
             }
         }
     }
