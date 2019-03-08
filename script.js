@@ -1,100 +1,99 @@
 const Constants = {
     HORIZONTAL: 0,
-    VERTICAL  : 1,
-  };
-  
-  HTMLElement.prototype.addClass = function(name) {
+    VERTICAL: 1,
+};
+
+HTMLElement.prototype.addClass = function (name) {
     let names = name.split(' ');
     for (let n of names) {
-      if (this.className === '') {
-        this.className = n;
-      }
-      else if (!this.classList.contains(n)) {
-        this.className = this.className.split(' ').concat(names).map(x => x.trim()).join(' ');
-      }
+        if (this.className === '') {
+            this.className = n;
+        } else if (!this.classList.contains(n)) {
+            this.className = this.className.split(' ').concat(names).map(x => x.trim()).join(' ');
+        }
     }
-  
+
     return this;
-  }
-  
-  HTMLElement.prototype.removeClass = function(name) {
+}
+
+HTMLElement.prototype.removeClass = function (name) {
     let names = name.split(' ').map(x => x.trim());
     let classNames = this.className.split(' ');
     for (let n of names) {
-      let i = classNames.indexOf(n);
-      if (i >= 0) {
-        classNames.splice(i, 1);
-      }
+        let i = classNames.indexOf(n);
+        if (i >= 0) {
+            classNames.splice(i, 1);
+        }
     }
     this.className = classNames.join(' ');
-  
+
     return this;
-  }
-  
-  class CanvasObject {
-  
+}
+
+class CanvasObject {
+
     constructor() {
-      objects.push(this);
-      this.domNode = document.createElement('div').addClass('canvas-object');
-  
-      canvas.append(this.domNode);
-  
-      this.setSelected(false);
-      
-      this.moved = false;
-      this.isMoving = true;
-      this.startPosition = null;
+        objects.push(this);
+        this.domNode = document.createElement('div').addClass('canvas-object');
+
+        canvas.append(this.domNode);
+
+        this.setSelected(false);
+
+        this.moved = false;
+        this.isMoving = true;
+        this.startPosition = null;
     }
-  
+
     setSelected(selected) {
-      this.selected = selected;
-  
-      if (this.selected) {
-        this.domNode.addClass('selected');
-      } else {
-        this.domNode.removeClass('selected');
-      }
+        this.selected = selected;
+
+        if (this.selected) {
+            this.domNode.addClass('selected');
+        } else {
+            this.domNode.removeClass('selected');
+        }
     }
-  
+
     onMouseDown(e) {
-      if (e.target !== this.domNode) {
-        if (this.selected)
-          this.isMoving = true;
-        return false;
-      }
-      
-      if (!e.ctrlKey) {
-        for (let o of objects)
-          o.setSelected(false);
-      }
-  
-      this.setSelected(true);
-      this.moved = false;
-      this.isMoving = true;
-  
-      return true;
+        if (e.target !== this.domNode) {
+            if (this.selected)
+                this.isMoving = true;
+            return false;
+        }
+
+        if (!e.ctrlKey) {
+            for (let o of objects)
+                o.setSelected(false);
+        }
+
+        this.setSelected(true);
+        this.moved = false;
+        this.isMoving = true;
+
+        return true;
     }
-  
+
     onMouseUp(e) {
-      if (this.moved) {
-        this.setSelected(this.selected);
-      }
-      
-      this.isMoving = false;
-  
-      return true;
+        if (this.moved) {
+            this.setSelected(this.selected);
+        }
+
+        this.isMoving = false;
+
+        return true;
     }
-  
+
     onMouseMove() {
-      if (this.selected)
-        this.moved = true;
+        if (this.selected)
+            this.moved = true;
     }
 
     onKeyDown(e) {
         if (!this.selected)
             return;
 
-        switch(e.keyCode) {
+        switch (e.keyCode) {
             case 8: // Backspace
             case 46: // Delete
                 let i = objects.indexOf(this);
@@ -105,404 +104,419 @@ const Constants = {
                 delete this;
         }
     }
-  
-  }
-  
-  class StickyLine extends CanvasObject {
-  
+
+}
+
+class StickyLine extends CanvasObject {
+
     constructor(direction, position) {
-      super();
-      this.domNode.addClass('sticky-line');
-      this.direction = direction;
-  
-      if (this.direction === Constants.HORIZONTAL) {
-        this.domNode.addClass('horizontal');
-      } else {
-        this.domNode.addClass('vertical');
-      }
-  
-      this.setPosition(position);
-      this.startPosition = this.position;
-  
-      this.dependencies = [];
-    }
-  
-    setPosition(position) {
-      if (this.direction === Constants.HORIZONTAL) {
-        this.domNode.style.top = position + 'px';
-      } else {
-        this.domNode.style.left = position + 'px';
-      }
-  
-      this.position = position;
-    }
-  
-    switchDirection() {
-      if (this.direction === Constants.HORIZONTAL) {
-        this.domNode.style.top = null;
-        this.direction = Constants.VERTICAL;
-        this.domNode.removeClass('horizontal').addClass('vertical');
-      } else {
-        this.domNode.style.left = null;
-        this.domNode.removeClass('vertical').addClass('horizontal');
-        this.direction = Constants.HORIZONTAL;
-      }
-      this.setPosition(this.position);
-    }
-  
-    addDependance(o) {
-      if (!this.dependencies.includes(o))
-        this.dependencies.push(o);
-  
-      if (this.direction === Constants.HORIZONTAL) {
-        o.position.y = this.position;
-      } else {
-        o.position.x = this.position;
-      }
-      o.updatePosition();
-    }
-  
-    removeDependance(o) {
-      let i = this.dependencies.indexOf(o);
-      if (i >= 0) {
-        this.dependencies.splice(i, 1);
-      }
-    }
-    
-    onMouseDown(e) {
-      this.startPosition = this.position;
-      
-      super.onMouseDown(e);
-    }
-  
-    onMouseMove(e) {
-      super.onMouseMove();
-      
-      if (!this.selected || !this.isMoving)
-        return false;
-  
-      if (this.direction === Constants.HORIZONTAL) {
-        this.setPosition(this.startPosition + e.clientY - mousePositionStart.y);
-      } else {
-        this.setPosition(this.startPosition + e.clientX - mousePositionStart.x);
-      }
-  
-      for (let o of this.dependencies) {
+        super();
+        this.domNode.addClass('sticky-line');
+        this.direction = direction;
+
         if (this.direction === Constants.HORIZONTAL) {
-          o.position.y = this.position;
+            this.domNode.addClass('horizontal');
         } else {
-          o.position.x = this.position;
+            this.domNode.addClass('vertical');
+        }
+
+        this.setPosition(position);
+        this.startPosition = this.position;
+
+        this.dependencies = [];
+    }
+
+    setPosition(position) {
+        if (this.direction === Constants.HORIZONTAL) {
+            this.domNode.style.top = position + 'px';
+        } else {
+            this.domNode.style.left = position + 'px';
+        }
+
+        this.position = position;
+    }
+
+    switchDirection() {
+        if (this.direction === Constants.HORIZONTAL) {
+            this.domNode.style.top = null;
+            this.direction = Constants.VERTICAL;
+            this.domNode.removeClass('horizontal').addClass('vertical');
+        } else {
+            this.domNode.style.left = null;
+            this.domNode.removeClass('vertical').addClass('horizontal');
+            this.direction = Constants.HORIZONTAL;
+        }
+        this.setPosition(this.position);
+    }
+
+    addDependance(o) {
+        if (!this.dependencies.includes(o))
+            this.dependencies.push(o);
+
+        if (this.direction === Constants.HORIZONTAL) {
+            o.position.y = this.position;
+        } else {
+            o.position.x = this.position;
         }
         o.updatePosition();
-      }
-  
-      return true;
     }
-  
-  }
-  
-  class ShapeObject extends CanvasObject {
-  
+
+    removeDependance(o) {
+        let i = this.dependencies.indexOf(o);
+        if (i >= 0) {
+            this.dependencies.splice(i, 1);
+        }
+    }
+
+    onMouseDown(e) {
+        this.startPosition = this.position;
+
+        super.onMouseDown(e);
+    }
+
+    onMouseMove(e) {
+        super.onMouseMove();
+
+        if (!this.selected || !this.isMoving)
+            return false;
+
+        if (this.direction === Constants.HORIZONTAL) {
+            this.setPosition(this.startPosition + e.clientY - mousePositionStart.y);
+        } else {
+            this.setPosition(this.startPosition + e.clientX - mousePositionStart.x);
+        }
+
+        for (let o of this.dependencies) {
+            if (this.direction === Constants.HORIZONTAL) {
+                o.position.y = this.position;
+            } else {
+                o.position.x = this.position;
+            }
+            o.updatePosition();
+        }
+
+        return true;
+    }
+
+}
+
+class ShapeObject extends CanvasObject {
+
     constructor(x, y, w, h) {
-      super();
-  
-      this.setPosition(x, y);
-      this.setWidth(w);
-      this.setHeight(h);
-      
-      this.startPosition = Object.assign({}, this.position);
+        super();
+
+        this.setPosition(x, y);
+        this.setWidth(w);
+        this.setHeight(h);
+
+        this.startPosition = Object.assign({}, this.position);
     }
-  
+
     setPosition(x, y) {
-      this.position = {x, y};
-      this.updatePosition();
+        this.position = {
+            x,
+            y
+        };
+        this.updatePosition();
     }
-  
+
     updatePosition() {
-      this.domNode.style.left = this.position.x - (this.width + 8) / 2 + 'px';
-      this.domNode.style.top = this.position.y - (this.height + 8) / 2 + 'px';
+        this.domNode.style.left = this.position.x - (this.width + 8) / 2 + 'px';
+        this.domNode.style.top = this.position.y - (this.height + 8) / 2 + 'px';
     }
 
     setDimensions(w, h) {
         this.setWidth(w);
         this.setHeight(h);
     }
-  
+
     setWidth(w) {
-      this.width = w;
-      this.domNode.style.width = w + 'px';
-      this.updatePosition();
+        this.width = w;
+        this.domNode.style.width = w + 'px';
+        this.updatePosition();
     }
-  
+
     setHeight(h) {
-      this.height = h;
-      this.domNode.style.height = h + 'px';
-      this.updatePosition();
+        this.height = h;
+        this.domNode.style.height = h + 'px';
+        this.updatePosition();
     }
-    
+
     onMouseDown(e) {
-      this.startPosition = Object.assign({}, this.position);
-      
-      super.onMouseDown(e);
+        this.startPosition = Object.assign({}, this.position);
+
+        super.onMouseDown(e);
     }
-  
+
     onMouseMove(e) {
-      super.onMouseMove();
-      
-      if (!this.selected || !this.isMoving)
-        return false;
-  
-      let x = this.startPosition.x + e.clientX - mousePositionStart.x;
-      let y = this.startPosition.y + e.clientY - mousePositionStart.y;
-      this.setPosition(x, y);
-  
-      for (let o of objects) {
-        if (!(o instanceof StickyLine))
-          continue;
-        if (this.isCloseOf(o)) {
-          this.stickTo(o);
-        } else {
-          this.unstickFrom(o);
+        super.onMouseMove();
+
+        if (!this.selected || !this.isMoving)
+            return false;
+
+        let x = this.startPosition.x + e.clientX - mousePositionStart.x;
+        let y = this.startPosition.y + e.clientY - mousePositionStart.y;
+        this.setPosition(x, y);
+
+        for (let o of objects) {
+            if (!(o instanceof StickyLine))
+                continue;
+            if (this.isCloseOf(o)) {
+                this.stickTo(o);
+            } else {
+                this.unstickFrom(o);
+            }
         }
-      }
-  
-      return true;
+
+        return true;
     }
-  
+
     isCloseOf(o) {
-      let distance;
-      if (o.direction === Constants.HORIZONTAL) {
-        distance = o.position - this.position.y;
-      } else {
-        distance = o.position - this.position.x;
-      }
-      return Math.abs(distance) < 15;
+        let distance;
+        if (o.direction === Constants.HORIZONTAL) {
+            distance = o.position - this.position.y;
+        } else {
+            distance = o.position - this.position.x;
+        }
+        return Math.abs(distance) < 15;
     }
-  
+
     stickTo(o) {
-      o.addDependance(this);
+        o.addDependance(this);
     }
-  
+
     unstickFrom(o) {
-      o.removeDependance(this);
+        o.removeDependance(this);
     }
-  
-  }
-  
-  class Rectangle extends ShapeObject {
-  
+
+}
+
+class Rectangle extends ShapeObject {
+
     constructor(x, y, w, h) {
-      super(x, y, w, h);
-  
-      this.domNode.addClass('rectangle');
+        super(x, y, w, h);
+
+        this.domNode.addClass('rectangle');
     }
-  
-  }
-  
-  class Ellipse extends ShapeObject {
-  
+
+}
+
+class Ellipse extends ShapeObject {
+
     constructor(x, y, w, h) {
-      super(x, y, w, h);
-  
-      this.domNode.addClass('ellipse');
+        super(x, y, w, h);
+
+        this.domNode.addClass('ellipse');
     }
-  
-  }
-  
-  function onMouseDown(e) {
+
+}
+
+function onMouseDown(e) {
     let didSomething = false;
-    mousePositionStart = {x: e.clientX, y: e.clientY};
-  
+    mousePositionStart = {
+        x: e.clientX,
+        y: e.clientY
+    };
+
     for (let o of objects) {
-      didSomething |= o.onMouseDown(e);
+        didSomething |= o.onMouseDown(e);
     }
-  
+
     if (didSomething || e.target != canvas)
-      return;
-  
+        return;
+
     for (let tool of tools) {
-      if (tool.selected) {
-        tool.onMouseDown(e);
-      }
+        if (tool.selected) {
+            tool.onMouseDown(e);
+        }
     }
-  }
-  
-  function onMouseUp(e) {
+}
+
+function onMouseUp(e) {
     let didSomething = false;
-  
+
     for (let o of objects) {
-      didSomething |= o.onMouseUp(e);
+        didSomething |= o.onMouseUp(e);
     }
-  
+
     for (let tool of tools) {
-      if (tool.selected) {
-        tool.onMouseUp(e);
-      }
+        if (tool.selected) {
+            tool.onMouseUp(e);
+        }
     }
-  }
-  
-  function onMouseMove(e) {
+}
+
+function onMouseMove(e) {
     let didSomething = false;
-  
+
     for (let tool of tools) {
-      if (tool.selected) {
-        didSomething |= tool.onMouseMove(e);
-      }
+        if (tool.selected) {
+            didSomething |= tool.onMouseMove(e);
+        }
     }
-  
+
     if (didSomething) {
-        previousMousePosition = {x: e.clientX, y: e.clientY};
-      return;
+        previousMousePosition = {
+            x: e.clientX,
+            y: e.clientY
+        };
+        return;
     }
-  
+
     for (let o of objects) {
-      didSomething |= o.onMouseMove(e);
+        didSomething |= o.onMouseMove(e);
     }
 
-    previousMousePosition = {x: e.clientX, y: e.clientY};
-  }
+    previousMousePosition = {
+        x: e.clientX,
+        y: e.clientY
+    };
+}
 
-  function onKeyDown(e) {
+function onKeyDown(e) {
     for (let i = objects.length - 1; i >= 0; i--) {
         let o = objects[i];
-      o.onKeyDown(e);
+        o.onKeyDown(e);
     }
-  }
-  
-  function unselectAll() {
+}
+
+function unselectAll() {
     for (let o of objects) {
-      o.setSelected(false);
+        o.setSelected(false);
     }
-  }
-  
-  let canvas = document.getElementById('canvas');
-  let objects = [];
-  let sl1 = new StickyLine(Constants.HORIZONTAL, 200);
-  let sl2 = new StickyLine(Constants.VERTICAL, 200);
-  let c1 = new Ellipse(300, 100, 125, 125);
-  let c2 = new Ellipse(450, 350, 120, 120);
-  let r1 = new Rectangle(450, 160, 50, 150);
-  let r2 = new Rectangle(600, 160, 75, 75);
-  let tools = [];
-  let toolbox;
-  let mousePositionStart = {x: -1, y: -1};
-  
-  document.addEventListener('contextmenu', function(e) {
+}
+
+let canvas = document.getElementById('canvas');
+let objects = [];
+let sl1 = new StickyLine(Constants.HORIZONTAL, 200);
+let sl2 = new StickyLine(Constants.VERTICAL, 200);
+let c1 = new Ellipse(300, 100, 125, 125);
+let c2 = new Ellipse(450, 350, 120, 120);
+let r1 = new Rectangle(450, 160, 50, 150);
+let r2 = new Rectangle(600, 160, 75, 75);
+let tools = [];
+let toolbox;
+let mousePositionStart = {
+    x: -1,
+    y: -1
+};
+
+document.addEventListener('contextmenu', function (e) {
     e.preventDefault();
     return false;
-  });
-  document.addEventListener('mousedown', onMouseDown);
-  document.addEventListener('mouseup', onMouseUp);
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('keydown', onKeyDown);
-  
+});
+document.addEventListener('mousedown', onMouseDown);
+document.addEventListener('mouseup', onMouseUp);
+document.addEventListener('mousemove', onMouseMove);
+document.addEventListener('keydown', onKeyDown);
+
 class Function {
 
     constructor(name) {
-      this.name = name;
-      this.domNode = document.createElement('div');
-      this.domNode.innerHTML = this.name;
-      this.domNode.addClass('tool');
-      this.domNode.addEventListener('click', this.onClick.bind(this));
+        this.name = name;
+        this.domNode = document.createElement('div');
+        this.domNode.innerHTML = this.name;
+        this.domNode.addClass('tool');
+        this.domNode.addEventListener('click', this.onClick.bind(this));
     }
-  
+
     appendTo(o) {
-      o.append(this.domNode);
+        o.append(this.domNode);
     }
 
     onClick() {}
 
 }
 
-  class Command extends Function {
+class Command extends Function {
 
     constructor(name, selected) {
         super(name);
     }
-      
+
 }
 
-  class Tool extends Function {
-  
+class Tool extends Function {
+
     constructor(name, selected) {
         super(name);
-  
-      this.setSelected(selected);
+
+        this.setSelected(selected);
     }
-  
+
     setSelected(selected) {
-      this.selected = selected;
-  
-      if (this.selected) {
-        this.domNode.addClass('selected');
-      } else {
-        this.domNode.removeClass('selected');
-      }
+        this.selected = selected;
+
+        if (this.selected) {
+            this.domNode.addClass('selected');
+        } else {
+            this.domNode.removeClass('selected');
+        }
     }
-  
+
     onClick(e) {
-      for (let tool of tools) {
-        if (tool instanceof Tool)
-            tool.setSelected(false);
-      }
-  
-      this.setSelected(true);
+        for (let tool of tools) {
+            if (tool instanceof Tool)
+                tool.setSelected(false);
+        }
+
+        this.setSelected(true);
     }
-  
+
     onMouseDown() {}
     onMouseUp() {}
     onMouseMove() {}
-  
-  }
-  
-  class VerticalLine extends Tool {
-  
+
+}
+
+class VerticalLine extends Tool {
+
     constructor(selected) {
-      super('Vertical Line', selected);
+        super('Vertical Line', selected);
     }
-  
+
     onMouseDown(e) {
         unselectAll();
-        
+
         if (e.button !== 0)
             return;
-  
-      let sl = new StickyLine(Constants.VERTICAL, e.clientX);
-      sl.setSelected(true);
+
+        let sl = new StickyLine(Constants.VERTICAL, e.clientX);
+        sl.setSelected(true);
     }
-  
-  }
-  
-  class HorizontalLine extends Tool {
-  
+
+}
+
+class HorizontalLine extends Tool {
+
     constructor(selected) {
-      super('Horizontal Line', selected);
+        super('Horizontal Line', selected);
     }
-  
+
     onMouseDown(e) {
-      unselectAll();
+        unselectAll();
 
-      if (e.button !== 0)
-        return;
+        if (e.button !== 0)
+            return;
 
-      let sl = new StickyLine(Constants.HORIZONTAL, e.clientY);
-      sl.setSelected(true);
+        let sl = new StickyLine(Constants.HORIZONTAL, e.clientY);
+        sl.setSelected(true);
     }
-  
-  }
 
-  class ShapeTool extends Tool {
-  
+}
+
+class ShapeTool extends Tool {
+
     constructor(name, selected) {
-      super(name, selected);
+        super(name, selected);
 
-      this.rect = {};
-      this.hide();
+        this.rect = {};
+        this.hide();
     }
 
     hide() {
-      this.setPosition(-1, -1);
-      this.setDimensions(0, 0);
+        this.setPosition(-1, -1);
+        this.setDimensions(0, 0);
     }
 
     setPosition(x, y) {
@@ -521,7 +535,12 @@ class Function {
         if (!this.shapeNode)
             return;
 
-        let {x, y, w, h} = this.getRectangle();
+        let {
+            x,
+            y,
+            w,
+            h
+        } = this.getRectangle();
         this.shapeNode.style.left = x + "px";
         this.shapeNode.style.top = y + "px";
         this.shapeNode.style.width = w + "px";
@@ -544,11 +563,21 @@ class Function {
             y = this.rect.y;
             h = this.rect.h;
         }
-        return {x, y, w, h};
+        return {
+            x,
+            y,
+            w,
+            h
+        };
     }
 
     includes(o) {
-        let {x, y, w, h} = this.getRectangle();
+        let {
+            x,
+            y,
+            w,
+            h
+        } = this.getRectangle();
 
         return !(o.position.x < x ||
             o.position.x >= x + w ||
@@ -556,10 +585,10 @@ class Function {
             o.position.y >= y + h);
     }
 
-  }
-  
-  class Select extends ShapeTool {
-    
+}
+
+class Select extends ShapeTool {
+
     constructor(selected) {
         super('Select', selected);
 
@@ -568,27 +597,27 @@ class Function {
         canvas.append(this.shapeNode);
         this.previouslySelected = [];
     }
-  
+
     onMouseDown(e) {
-      if (e.ctrlKey) {
-        this.previouslySelected = [];
-        for (let o of objects) {
-            if (o instanceof ShapeObject && o.selected) {
-                this.previouslySelected.push(o);
+        if (e.ctrlKey) {
+            this.previouslySelected = [];
+            for (let o of objects) {
+                if (o instanceof ShapeObject && o.selected) {
+                    this.previouslySelected.push(o);
+                }
             }
+        } else {
+            unselectAll();
         }
-      } else {
-        unselectAll();
-      }
 
-      if (e.button !== 0)
-        return;
+        if (e.button !== 0)
+            return;
 
-      this.setPosition(e.clientX, e.clientY);
-      this.setDimensions(0, 0);
-      this.selecting = true;
+        this.setPosition(e.clientX, e.clientY);
+        this.setDimensions(0, 0);
+        this.selecting = true;
     }
-  
+
     onMouseMove(e) {
         if (!this.selecting)
             return;
@@ -599,13 +628,13 @@ class Function {
         for (let o of this.previouslySelected) {
             o.setSelected(true);
         }
-      for (let o of objects) {
-          if (o instanceof ShapeObject && this.includes(o)) {
-            o.setSelected(true);
-          }
-      }
+        for (let o of objects) {
+            if (o instanceof ShapeObject && this.includes(o)) {
+                o.setSelected(true);
+            }
+        }
 
-      return true;
+        return true;
     }
 
     onMouseUp(e) {
@@ -613,10 +642,10 @@ class Function {
         this.hide();
     }
 
-  }
-  
-  class DrawShapeTool extends ShapeTool {
-    
+}
+
+class DrawShapeTool extends ShapeTool {
+
     constructor(name, selected) {
         super(name, selected);
 
@@ -627,32 +656,37 @@ class Function {
     updateShapeNode() {
         if (!this.shape)
             return null;
-        
-        let {x, y, w, h} = this.getRectangle();
+
+        let {
+            x,
+            y,
+            w,
+            h
+        } = this.getRectangle();
         this.shape.setPosition(x + (w + 8) / 2, y + (h + 8) / 2);
         this.shape.setDimensions(w, h);
     }
-  
+
     onMouseDown(e) {
-      unselectAll();
+        unselectAll();
 
-      if (e.button !== 0)
-        return;
+        if (e.button !== 0)
+            return;
 
-      this.createShape();
+        this.createShape();
 
-      this.setPosition(e.clientX, e.clientY);
-      this.setDimensions(0, 0);
-      this.drawing = true;
+        this.setPosition(e.clientX, e.clientY);
+        this.setDimensions(0, 0);
+        this.drawing = true;
     }
-  
+
     onMouseMove(e) {
         if (!this.drawing)
             return;
 
         this.setDimensions(e.clientX - this.rect.x, e.clientY - this.rect.y);
 
-      return true;
+        return true;
     }
 
     onMouseUp(e) {
@@ -662,34 +696,34 @@ class Function {
 
     createShape() {}
 
-  }
+}
 
-  class DrawRectangle extends DrawShapeTool {
-      constructor(selected) {
-        super('Rectangle', selected);
-      }
-
-      createShape() {
-          this.shape = new Rectangle();
-      }
-  }
- 
-  class DrawEllipse extends DrawShapeTool {
+class DrawRectangle extends DrawShapeTool {
     constructor(selected) {
-      super('Ellipse', selected);
+        super('Rectangle', selected);
+    }
+
+    createShape() {
+        this.shape = new Rectangle();
+    }
+}
+
+class DrawEllipse extends DrawShapeTool {
+    constructor(selected) {
+        super('Ellipse', selected);
     }
 
     createShape() {
         this.shape = new Ellipse();
     }
 }
-  
-  class VerticalAlignment extends Command {
-  
+
+class VerticalAlignment extends Command {
+
     constructor() {
-      super('Vertical Alignment');
+        super('Vertical Alignment');
     }
-  
+
     onClick(e) {
         let meanX = 0;
         let lObjects = [];
@@ -706,15 +740,15 @@ class Function {
             o.updatePosition();
         }
     }
-  
-  }
-  
-  class HorizontalAlignment extends Command {
-  
+
+}
+
+class HorizontalAlignment extends Command {
+
     constructor() {
-      super('Horizontal Alignment');
+        super('Horizontal Alignment');
     }
-  
+
     onClick(e) {
         let meanY = 0;
         let lObjects = [];
@@ -731,14 +765,14 @@ class Function {
             o.updatePosition();
         }
     }
-  
-  }
-  
-  function createToolbox() {
+
+}
+
+function createToolbox() {
     toolbox = document.createElement('div');
     toolbox.id = 'toolbox';
     document.body.append(toolbox);
-  
+
     tools.push(new Select(true));
     tools.push(new DrawRectangle());
     tools.push(new DrawEllipse());
@@ -746,10 +780,10 @@ class Function {
     tools.push(new HorizontalLine());
     tools.push(new VerticalAlignment());
     tools.push(new HorizontalAlignment());
-  
+
     for (let tool of tools) {
-      tool.appendTo(toolbox);
+        tool.appendTo(toolbox);
     }
-  }
-  
-  createToolbox();
+}
+
+createToolbox();
