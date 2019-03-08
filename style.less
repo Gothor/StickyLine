@@ -37,6 +37,11 @@ body,
         &.selected {
             background-image: linear-gradient(#888, #555)
         }
+
+        &.disable {
+            background-image: linear-gradient(#eee, #ccc);
+            color: #888;
+        }
     }
 }
 
@@ -61,7 +66,15 @@ body,
         left: 0;
         right: 0;
     }
-    
+
+    &.spread {
+        border-color: #622;
+
+        &.selected {
+            border-color: #955;
+        }
+    }
+
 }
 
 .ellipse,

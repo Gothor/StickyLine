@@ -122,6 +122,7 @@ class StickyLine extends CanvasObject {
 
         this.setPosition(position);
         this.startPosition = this.position;
+        this.setSpread(false);
 
         this.dependencies = [];
     }
@@ -134,6 +135,15 @@ class StickyLine extends CanvasObject {
         }
 
         this.position = position;
+    }
+
+    setSpread(spread) {
+        this.spread = spread;
+        if (this.spread) {
+            this.domNode.addClass('spread');
+        } else {
+            this.domNode.removeClass('spread');
+        }
     }
 
     switchDirection() {
@@ -149,6 +159,44 @@ class StickyLine extends CanvasObject {
         this.setPosition(this.position);
     }
 
+    reorder() {
+        let otherLines = this.getOtherLines();
+        let sortFunction;
+        let length;
+        if (this.direction === Constants.HORIZONTAL) {
+            this.dependencies.sort((a, b) => a.position.x - b.position.x);
+            this.length = parseInt(getComputedStyle(objects[0].domNode)["width"]);
+            this.gap = this.length / (this.dependencies.length + 1);
+            for (let i = 0; i < this.dependencies.length; i++) {
+                this.dependencies[i].position.x = this.gap * (i + 1);
+                this.dependencies[i].updatePosition();
+            }
+        } else {
+            this.dependencies.sort((a, b) => a.position.y - b.position.y);
+            this.length = parseInt(getComputedStyle(objects[0].domNode)["height"]);
+            this.gap = this.length / (this.dependencies.length + 1);
+            for (let i = 0; i < this.dependencies.length; i++) {
+                this.dependencies[i].position.y = this.gap * (i + 1);
+                this.dependencies[i].updatePosition();
+            }
+        }
+        console.log(otherLines);
+        for (let d of this.dependencies) {
+            for (let o of otherLines) {
+                d.unstickFrom(o);
+            }
+        }
+    }
+
+    getOtherLines() {
+        let others = [];
+        for (let o of objects) {
+            if (o instanceof StickyLine && o !== this)
+                others.push(o);
+        }
+        return others;
+    }
+
     addDependance(o) {
         if (!this.dependencies.includes(o))
             this.dependencies.push(o);
@@ -159,6 +207,8 @@ class StickyLine extends CanvasObject {
             o.position.x = this.position;
         }
         o.updatePosition();
+        if (this.spread)
+            this.reorder();
     }
 
     removeDependance(o) {
@@ -166,6 +216,8 @@ class StickyLine extends CanvasObject {
         if (i >= 0) {
             this.dependencies.splice(i, 1);
         }
+        if (this.spread)
+            this.reorder();
     }
 
     onMouseDown(e) {
@@ -322,12 +374,9 @@ function onMouseDown(e) {
         didSomething |= o.onMouseDown(e);
     }
 
-    if (didSomething || e.target != canvas)
-        return;
-
     for (let tool of tools) {
-        if (tool.selected) {
-            tool.onMouseDown(e);
+        if ((tool instanceof Tool && tool.selected) || tool instanceof SpreadLine) {
+            tool.onMouseDown(e, didSomething);
         }
     }
 }
@@ -425,6 +474,21 @@ class Function {
     }
 
     onClick() {}
+    onMouseMove(e) {
+        if (e.target === this.domNode)
+            return true;
+        return false;
+    }
+
+    setSelected(selected) {
+        this.selected = selected;
+
+        if (this.selected) {
+            this.domNode.addClass('selected');
+        } else {
+            this.domNode.removeClass('selected');
+        }
+    }
 
 }
 
@@ -444,16 +508,6 @@ class Tool extends Function {
         this.setSelected(selected);
     }
 
-    setSelected(selected) {
-        this.selected = selected;
-
-        if (this.selected) {
-            this.domNode.addClass('selected');
-        } else {
-            this.domNode.removeClass('selected');
-        }
-    }
-
     onClick(e) {
         for (let tool of tools) {
             if (tool instanceof Tool)
@@ -465,7 +519,6 @@ class Tool extends Function {
 
     onMouseDown() {}
     onMouseUp() {}
-    onMouseMove() {}
 
 }
 
@@ -475,7 +528,10 @@ class VerticalLine extends Tool {
         super('Vertical Line', selected);
     }
 
-    onMouseDown(e) {
+    onMouseDown(e, didSomething) {
+        if (didSomething || e.target !== canvas)
+            return;
+
         unselectAll();
 
         if (e.button !== 0)
@@ -493,7 +549,10 @@ class HorizontalLine extends Tool {
         super('Horizontal Line', selected);
     }
 
-    onMouseDown(e) {
+    onMouseDown(e, didSomething) {
+        if (didSomething || e.target !== canvas)
+            return;
+
         unselectAll();
 
         if (e.button !== 0)
@@ -598,7 +657,10 @@ class Select extends ShapeTool {
         this.previouslySelected = [];
     }
 
-    onMouseDown(e) {
+    onMouseDown(e, didSomething) {
+        if (didSomething || e.target !== canvas)
+            return;
+
         if (e.ctrlKey) {
             this.previouslySelected = [];
             for (let o of objects) {
@@ -667,7 +729,10 @@ class DrawShapeTool extends ShapeTool {
         this.shape.setDimensions(w, h);
     }
 
-    onMouseDown(e) {
+    onMouseDown(e, didSomething) {
+        if (didSomething || e.target !== canvas)
+            return;
+
         unselectAll();
 
         if (e.button !== 0)
@@ -768,6 +833,62 @@ class HorizontalAlignment extends Command {
 
 }
 
+class SpreadLine extends Function {
+
+    constructor() {
+        super("Spread");
+        
+        this.disable();
+    }
+
+    onMouseDown(e) {
+        this.checkState();
+    }
+
+    onMouseUp(e) {
+        this.checkState();
+    }
+
+    onClick(e) {
+        let line = this.getSelectedLine();
+        if (line) {
+            line.setSpread(!line.spread);
+            this.setSelected(line.spread);
+            if (line.spread) {
+                line.reorder();
+            }
+        }
+    }
+
+    getSelectedLine() {
+        let selectedLines = objects.filter(o => o instanceof StickyLine && o.selected);
+        if (selectedLines.length !== 1)
+            return null;
+        return selectedLines[0];
+    }
+
+    checkState() {
+        let line = this.getSelectedLine();
+        if (!line)
+            this.disable();
+        else {
+            this.enable();
+            this.setSelected(line.spread);
+        }
+    }
+
+    disable() {
+        this.disabled = true;
+        this.domNode.addClass('disable');
+    }
+
+    enable() {
+        this.disabled = false;
+        this.domNode.removeClass('disable');
+    }
+
+}
+
 function createToolbox() {
     toolbox = document.createElement('div');
     toolbox.id = 'toolbox';
@@ -780,6 +901,7 @@ function createToolbox() {
     tools.push(new HorizontalLine());
     tools.push(new VerticalAlignment());
     tools.push(new HorizontalAlignment());
+    tools.push(new SpreadLine());
 
     for (let tool of tools) {
         tool.appendTo(toolbox);
