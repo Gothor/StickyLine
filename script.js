@@ -375,7 +375,7 @@ function onMouseDown(e) {
     }
 
     for (let tool of tools) {
-        if ((tool instanceof Tool && tool.selected) || tool instanceof SpreadLine) {
+        if ((tool instanceof Tool && tool.selected) || tool instanceof DistributeLine) {
             tool.onMouseDown(e, didSomething);
         }
     }
@@ -833,10 +833,10 @@ class HorizontalAlignment extends Command {
 
 }
 
-class SpreadLine extends Function {
+class DistributeLine extends Function {
 
     constructor() {
-        super("Spread");
+        super("Distribute line");
         
         this.disable();
     }
@@ -901,7 +901,7 @@ function createToolbox() {
     tools.push(new HorizontalLine());
     tools.push(new VerticalAlignment());
     tools.push(new HorizontalAlignment());
-    tools.push(new SpreadLine());
+    tools.push(new DistributeLine());
 
     for (let tool of tools) {
         tool.appendTo(toolbox);
