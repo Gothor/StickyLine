@@ -3,6 +3,11 @@ const Constants = {
     VERTICAL: 1,
 };
 
+const Modes = {
+    STICKYLINE: 0,
+    COMMANDS: 1,
+};
+
 HTMLElement.prototype.addClass = function (name) {
     let names = name.split(' ');
     for (let n of names) {
@@ -455,6 +460,27 @@ function onKeyDown(e) {
         let o = objects[i];
         o.onKeyDown(e);
     }
+
+    switch(e.key) {
+        case 'a':
+            if (e.ctrlKey) {
+                e.preventDefault();
+                selectAll();
+                return false;
+            }
+        case 'd':
+            if (e.ctrlKey) {
+                e.preventDefault();
+                unselectAll();
+                return false;
+            }
+    }
+}
+
+function selectAll() {
+    for (let o of objects) {
+        o.setSelected(true);
+    }
 }
 
 function unselectAll() {
@@ -465,12 +491,12 @@ function unselectAll() {
 
 let canvas = document.getElementById('canvas');
 let objects = [];
-let sl1 = new StickyLine(Constants.HORIZONTAL, 200);
-let sl2 = new StickyLine(Constants.VERTICAL, 200);
-let c1 = new Ellipse(300, 100, 125, 125);
-let c2 = new Ellipse(450, 350, 120, 120);
-let r1 = new Rectangle(450, 160, 50, 150);
-let r2 = new Rectangle(600, 160, 75, 75);
+// let sl1 = new StickyLine(Constants.HORIZONTAL, 200);
+// let sl2 = new StickyLine(Constants.VERTICAL, 200);
+// let c1 = new Ellipse(300, 100, 125, 125);
+// let c2 = new Ellipse(450, 350, 120, 120);
+// let r1 = new Rectangle(450, 160, 50, 150);
+// let r2 = new Rectangle(600, 160, 75, 75);
 let tools = [];
 let toolbox;
 let mousePositionStart = {
@@ -973,6 +999,8 @@ class DistributeLine extends Function {
 
 }
 
+let mode = Modes.STICKYLINE;
+
 function createToolbox() {
     toolbox = document.createElement('div');
     toolbox.id = 'toolbox';
@@ -981,13 +1009,17 @@ function createToolbox() {
     tools.push(new Select(true));
     tools.push(new DrawRectangle());
     tools.push(new DrawEllipse());
-    tools.push(new VerticalLine());
-    tools.push(new HorizontalLine());
-    tools.push(new VerticalAlignment());
-    tools.push(new HorizontalAlignment());
-    tools.push(new VerticalDistribution());
-    tools.push(new HorizontalDistribution());
-    tools.push(new DistributeLine());
+    if (mode === Modes.STICKYLINE) {
+        tools.push(new VerticalLine());
+        tools.push(new HorizontalLine());
+        tools.push(new DistributeLine());
+    }
+    else if (mode === Modes.COMMANDS) {
+        tools.push(new VerticalAlignment());
+        tools.push(new HorizontalAlignment());
+        tools.push(new VerticalDistribution());
+        tools.push(new HorizontalDistribution());
+    }
 
     for (let tool of tools) {
         tool.appendTo(toolbox);
