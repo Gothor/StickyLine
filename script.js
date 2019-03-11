@@ -166,9 +166,9 @@ class StickyLine extends CanvasObject {
 
     reorder() {
         let otherLines = this.getOtherLines();
-        for (let d of this.dependencies) {
+        for (let d of this.dependencies.map(x => x[0])) {
             for (let o of otherLines) {
-                let i = o.dependencies.indexOf(d);
+                let i = o.dependencies.map(x => x[0]).indexOf(d);
                 if (i >= 0) {
                     o.dependencies.splice(i, 1);
                 }
@@ -176,24 +176,24 @@ class StickyLine extends CanvasObject {
             }
         }
         if (this.direction === Constants.HORIZONTAL) {
-            this.dependencies.sort((a, b) => a.position.x - b.position.x);
-            let dependenciesLength = this.dependencies.reduce((a, b) => a + b.width + 8, 0);
+            this.dependencies.sort((a, b) => a[0].position.x - b[0].position.x);
+            let dependenciesLength = this.dependencies.reduce((a, b) => a + b[0].width + 8, 0);
             let length = parseInt(getComputedStyle(this.domNode)["width"]) - dependenciesLength;
             let gap = length / (this.dependencies.length + 1);
             let distance = 0;
-            for (let d of this.dependencies) {
+            for (let [d, p] of this.dependencies) {
                 distance += gap + (d.width + 8) / 2;
                 d.position.x = distance;
                 d.updatePosition();
                 distance += (d.width + 8) / 2;
             }
         } else {
-            this.dependencies.sort((a, b) => a.position.y - b.position.y);
-            let dependenciesLength = this.dependencies.reduce((a, b) => a + b.height + 8, 0);
+            this.dependencies.sort((a, b) => a[0].position.y - b[0].position.y);
+            let dependenciesLength = this.dependencies.reduce((a, b) => a + b[0].height + 8, 0);
             let length = parseInt(getComputedStyle(this.domNode)["height"]) - dependenciesLength;
             let gap = length / (this.dependencies.length + 1);
             let distance = 0;
-            for (let d of this.dependencies) {
+            for (let [d, p] of this.dependencies) {
                 distance += gap + (d.height + 8) / 2;
                 d.position.y = distance;
                 d.updatePosition();
@@ -847,12 +847,15 @@ class DrawShapeTool extends ShapeTool {
     }
 
     onMouseUp(e) {
-        if (this.shape.width === 0 || this.shape.height === 0) {
+        if (this.shape && (this.shape.width === 0 || this.shape.height === 0)) {
             let i = objects.indexOf(this.shape);
             if (i >= 0) {
                 objects.splice(i, 1);
             }
             this.shape.domNode.parentNode.removeChild(this.shape.domNode);
+            for (let o of objects.filter(x => x instanceof StickyLine)) {
+                this.shape.unstickFrom(o);
+            }
             delete this.shape;
         }
 
