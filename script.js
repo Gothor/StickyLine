@@ -544,12 +544,21 @@ document.addEventListener('keydown', onKeyDown);
 
 class Function {
 
-    constructor(name) {
+    constructor(name, image) {
         this.name = name;
         this.domNode = document.createElement('div');
-        this.domNode.innerHTML = this.name;
         this.domNode.addClass('tool');
         this.domNode.addEventListener('click', this.onClick.bind(this));
+
+        if (image) {
+            this.image = image;
+            let imageNode = new Image();
+            imageNode.src = image;
+            imageNode.alt = imageNode.title = this.name;
+            this.domNode.appendChild(imageNode);
+        } else {
+            this.domNode.innerHTML = this.name;
+        }
     }
 
     appendTo(o) {
@@ -577,16 +586,16 @@ class Function {
 
 class Command extends Function {
 
-    constructor(name, selected) {
-        super(name);
+    constructor(name, image, selected) {
+        super(name, image);
     }
 
 }
 
 class Tool extends Function {
 
-    constructor(name, selected) {
-        super(name);
+    constructor(name, image, selected) {
+        super(name, image);
 
         this.setSelected(selected);
     }
@@ -608,7 +617,7 @@ class Tool extends Function {
 class VerticalLine extends Tool {
 
     constructor(selected) {
-        super('Vertical Line', selected);
+        super('Vertical Line', 'images/stickyline-verticale.png', selected);
     }
 
     onMouseDown(e, didSomething) {
@@ -629,7 +638,7 @@ class VerticalLine extends Tool {
 class HorizontalLine extends Tool {
 
     constructor(selected) {
-        super('Horizontal Line', selected);
+        super('Horizontal Line', 'images/stickyline-horizontale.png', selected);
     }
 
     onMouseDown(e, didSomething) {
@@ -649,8 +658,8 @@ class HorizontalLine extends Tool {
 
 class ShapeTool extends Tool {
 
-    constructor(name, selected) {
-        super(name, selected);
+    constructor(name, image, selected) {
+        super(name, image, selected);
 
         this.rect = {};
         this.hide();
@@ -732,7 +741,7 @@ class ShapeTool extends Tool {
 class Select extends ShapeTool {
 
     constructor(selected) {
-        super('Select', selected);
+        super('Select', 'images/rectangle-selection.png', selected);
 
         this.shapeNode = document.createElement('div').addClass('selection');
         this.selecting = false;
@@ -791,8 +800,8 @@ class Select extends ShapeTool {
 
 class DrawShapeTool extends ShapeTool {
 
-    constructor(name, selected) {
-        super(name, selected);
+    constructor(name, image, selected) {
+        super(name, image, selected);
 
         this.shape = null;
         this.drawing = false;
@@ -838,6 +847,15 @@ class DrawShapeTool extends ShapeTool {
     }
 
     onMouseUp(e) {
+        if (this.shape.width === 0 || this.shape.height === 0) {
+            let i = objects.indexOf(this.shape);
+            if (i >= 0) {
+                objects.splice(i, 1);
+            }
+            this.shape.domNode.parentNode.removeChild(this.shape.domNode);
+            delete this.shape;
+        }
+
         this.drawing = false;
         this.shape = null;
     }
@@ -848,7 +866,7 @@ class DrawShapeTool extends ShapeTool {
 
 class DrawRectangle extends DrawShapeTool {
     constructor(selected) {
-        super('Rectangle', selected);
+        super('Rectangle', 'images/rectangle.png', selected);
     }
 
     createShape() {
@@ -858,7 +876,7 @@ class DrawRectangle extends DrawShapeTool {
 
 class DrawEllipse extends DrawShapeTool {
     constructor(selected) {
-        super('Ellipse', selected);
+        super('Ellipse', 'images/ellipse.png', selected);
     }
 
     createShape() {
@@ -869,7 +887,7 @@ class DrawEllipse extends DrawShapeTool {
 class LeftVerticalAlignment extends Command {
 
     constructor() {
-        super('Left Vertical Alignment');
+        super('Left Vertical Alignment', 'images/alignement-vertical-gauche.png');
     }
 
     onClick(e) {
@@ -895,7 +913,7 @@ class LeftVerticalAlignment extends Command {
 class CenterVerticalAlignment extends Command {
 
     constructor() {
-        super('Center Vertical Alignment');
+        super('Center Vertical Alignment', 'images/alignement-vertical-centre.png');
     }
 
     onClick(e) {
@@ -920,7 +938,7 @@ class CenterVerticalAlignment extends Command {
 class RightVerticalAlignment extends Command {
 
     constructor() {
-        super('Right Vertical Alignment');
+        super('Right Vertical Alignment', 'images/alignement-vertical-droite.png');
     }
 
     onClick(e) {
@@ -946,7 +964,7 @@ class RightVerticalAlignment extends Command {
 class TopHorizontalAlignment extends Command {
 
     constructor() {
-        super('Top Horizontal Alignment');
+        super('Top Horizontal Alignment', 'images/alignement-horizontal-haut.png');
     }
 
     onClick(e) {
@@ -972,7 +990,7 @@ class TopHorizontalAlignment extends Command {
 class CenterHorizontalAlignment extends Command {
 
     constructor() {
-        super('Center Horizontal Alignment');
+        super('Center Horizontal Alignment', 'images/alignement-horizontal-centre.png');
     }
 
     onClick(e) {
@@ -997,7 +1015,7 @@ class CenterHorizontalAlignment extends Command {
 class BottomHorizontalAlignment extends Command {
 
     constructor() {
-        super('Bottom Horizontal Alignment');
+        super('Bottom Horizontal Alignment', 'images/alignement-horizontal-bas.png');
     }
 
     onClick(e) {
@@ -1023,7 +1041,7 @@ class BottomHorizontalAlignment extends Command {
 class VerticalDistribution extends Command {
 
     constructor() {
-        super('Vertical Distribution');
+        super('Vertical Distribution', 'images/distribution-verticale-centre.png');
     }
 
     getSelectedObjects() {
@@ -1051,7 +1069,7 @@ class VerticalDistribution extends Command {
 class HorizontalDistribution extends Command {
 
     constructor() {
-        super('Horizontal Distribution');
+        super('Horizontal Distribution', 'images/distribution-horizontale-centre.png');
     }
 
     getSelectedObjects() {
@@ -1079,7 +1097,7 @@ class HorizontalDistribution extends Command {
 class DistributeLine extends Function {
 
     constructor() {
-        super("Distribute elements");
+        super("Distribute elements", 'images/distribution-verticale-centre.png');
         
         this.disable();
     }

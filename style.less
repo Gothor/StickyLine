@@ -22,6 +22,7 @@ body,
     left: 10px;
     top: 10px;
     box-shadow: 2px 1px 3px #aaa;
+    text-align: center;
 
     .tool {
         background-image: linear-gradient(#ccc, #aaa);
@@ -41,6 +42,14 @@ body,
         &.disable {
             background-image: linear-gradient(#eee, #ccc);
             color: #888;
+
+            img {
+                opacity: 0.3;
+            }
+        }
+
+        img {
+            width: 40px;
         }
     }
 }
