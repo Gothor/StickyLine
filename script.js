@@ -837,10 +837,36 @@ class DrawEllipse extends DrawShapeTool {
     }
 }
 
-class VerticalAlignment extends Command {
+class LeftVerticalAlignment extends Command {
 
     constructor() {
-        super('Vertical Alignment');
+        super('Left Vertical Alignment');
+    }
+
+    onClick(e) {
+        let mostLeft = Infinity;
+        let lObjects = [];
+
+        for (let o of objects) {
+            if (o instanceof ShapeObject && o.selected) {
+                if (o.position.x - o.width / 2 < mostLeft) {
+                    mostLeft = o.position.x - o.width / 2;
+                }
+                lObjects.push(o);
+            }
+        }
+        for (let o of lObjects) {
+            o.position.x = mostLeft + o.width / 2;
+            o.updatePosition();
+        }
+    }
+
+}
+
+class CenterVerticalAlignment extends Command {
+
+    constructor() {
+        super('Center Vertical Alignment');
     }
 
     onClick(e) {
@@ -862,10 +888,62 @@ class VerticalAlignment extends Command {
 
 }
 
-class HorizontalAlignment extends Command {
+class RightVerticalAlignment extends Command {
 
     constructor() {
-        super('Horizontal Alignment');
+        super('Right Vertical Alignment');
+    }
+
+    onClick(e) {
+        let mostRight = -Infinity;
+        let lObjects = [];
+
+        for (let o of objects) {
+            if (o instanceof ShapeObject && o.selected) {
+                if (o.position.x + o.width / 2 > mostRight) {
+                    mostRight = o.position.x + o.width / 2;
+                }
+                lObjects.push(o);
+            }
+        }
+        for (let o of lObjects) {
+            o.position.x = mostRight - o.width / 2;
+            o.updatePosition();
+        }
+    }
+
+}
+
+class TopHorizontalAlignment extends Command {
+
+    constructor() {
+        super('Top Horizontal Alignment');
+    }
+
+    onClick(e) {
+        let mostTop = Infinity;
+        let lObjects = [];
+
+        for (let o of objects) {
+            if (o instanceof ShapeObject && o.selected) {
+                if (o.position.y - o.height / 2 < mostTop) {
+                    mostTop = o.position.y - o.height / 2;
+                }
+                lObjects.push(o);
+            }
+        }
+        for (let o of lObjects) {
+            o.position.y = mostTop + o.height / 2;
+            o.updatePosition();
+        }
+    }
+
+}
+
+class CenterHorizontalAlignment extends Command {
+
+    constructor() {
+        super('Center Horizontal Alignment');
     }
 
     onClick(e) {
@@ -881,6 +959,32 @@ class HorizontalAlignment extends Command {
         meanY /= lObjects.length;
         for (let o of lObjects) {
             o.position.y = meanY;
+            o.updatePosition();
+        }
+    }
+
+}
+
+class BottomHorizontalAlignment extends Command {
+
+    constructor() {
+        super('Bottom Horizontal Alignment');
+    }
+
+    onClick(e) {
+        let mostBottom = -Infinity;
+        let lObjects = [];
+
+        for (let o of objects) {
+            if (o instanceof ShapeObject && o.selected) {
+                if (o.position.y + o.height / 2 > mostBottom) {
+                    mostBottom = o.position.y + o.height / 2;
+                }
+                lObjects.push(o);
+            }
+        }
+        for (let o of lObjects) {
+            o.position.y = mostBottom - o.height / 2;
             o.updatePosition();
         }
     }
@@ -999,7 +1103,7 @@ class DistributeLine extends Function {
 
 }
 
-let mode = Modes.STICKYLINE;
+let mode = Modes.COMMANDS;
 
 function createToolbox() {
     toolbox = document.createElement('div');
@@ -1015,8 +1119,12 @@ function createToolbox() {
         tools.push(new DistributeLine());
     }
     else if (mode === Modes.COMMANDS) {
-        tools.push(new VerticalAlignment());
-        tools.push(new HorizontalAlignment());
+        tools.push(new LeftVerticalAlignment());
+        tools.push(new CenterVerticalAlignment());
+        tools.push(new RightVerticalAlignment());
+        tools.push(new TopHorizontalAlignment());
+        tools.push(new CenterHorizontalAlignment());
+        tools.push(new BottomHorizontalAlignment());
         tools.push(new VerticalDistribution());
         tools.push(new HorizontalDistribution());
     }
