@@ -211,14 +211,14 @@ class StickyLine extends CanvasObject {
         return others;
     }
 
-    addDependance(o) {
-        if (!this.dependencies.includes(o))
-            this.dependencies.push(o);
+    addDependance(o, snapPoint) {
+        if (!this.dependencies.map(x => x[0]).includes(o))
+            this.dependencies.push([o, snapPoint]);
 
         if (this.direction === Constants.HORIZONTAL) {
-            o.position.y = this.position;
+            o.position.y = this.position - snapPoint.y;
         } else {
-            o.position.x = this.position;
+            o.position.x = this.position - snapPoint.x;
         }
         o.updatePosition();
         if (this.spread)
@@ -226,7 +226,7 @@ class StickyLine extends CanvasObject {
     }
 
     removeDependance(o) {
-        let i = this.dependencies.indexOf(o);
+        let i = this.dependencies.map(x => x[0]).indexOf(o);
         if (i >= 0) {
             this.dependencies.splice(i, 1);
         }
@@ -253,20 +253,24 @@ class StickyLine extends CanvasObject {
         }
         
         for (let o of objects) {
-            if (!(o instanceof StickyLine) && !this.dependencies.includes(o) && o.isCloseOf(this)) {
+            if (o instanceof StickyLine)
+                continue;
+            
+            let snapPoint = o.isCloseOf(this);
+            if (!this.dependencies.map(x => x[0]).includes(o) && snapPoint !== null) {
                 if (this.direction === Constants.HORIZONTAL) {
-                    this.setPosition(o.position.y);
+                    this.setPosition(o.position.y + snapPoint.y);
                 } else {
-                    this.setPosition(o.position.x);
+                    this.setPosition(o.position.x + snapPoint.x);
                 }
             }
         }
 
-        for (let o of this.dependencies) {
+        for (let [o, p] of this.dependencies) {
             if (this.direction === Constants.HORIZONTAL) {
-                o.position.y = this.position;
+                o.position.y = this.position - p.y;
             } else {
-                o.position.x = this.position;
+                o.position.x = this.position - p.x;
             }
             o.updatePosition();
         }
@@ -277,8 +281,12 @@ class StickyLine extends CanvasObject {
     onMouseUp(e) {
         super.onMouseUp(e);
         for (let o of objects) {
-            if (!(o instanceof StickyLine) && !this.dependencies.includes(o) && o.isCloseOf(this)) {
-                this.addDependance(o);
+            if (o instanceof StickyLine)
+                continue;
+
+            let snapPoint = o.isCloseOf(this);
+            if (!this.dependencies.map(x => x[0]).includes(o) && snapPoint != null) {
+                this.addDependance(o, snapPoint);
             }
         }
     }
@@ -289,6 +297,8 @@ class ShapeObject extends CanvasObject {
 
     constructor(x, y, w, h) {
         super();
+
+        this.snapPoints = [{}, {}, {}];
 
         this.setPosition(x, y);
         this.setWidth(w);
@@ -313,6 +323,10 @@ class ShapeObject extends CanvasObject {
     setDimensions(w, h) {
         this.setWidth(w);
         this.setHeight(h);
+
+        this.snapPoints[0] = {x: -w/2 - 4, y: -h/2 - 4};
+        this.snapPoints[1] = {x: 0, y: 0};
+        this.snapPoints[2] = {x: w/2 + 4, y: h/2 + 4};
     }
 
     setWidth(w) {
@@ -346,8 +360,9 @@ class ShapeObject extends CanvasObject {
         for (let o of objects) {
             if (!(o instanceof StickyLine))
                 continue;
-            if (this.isCloseOf(o)) {
-                this.stickTo(o);
+            let closestSnappingPoint = this.isCloseOf(o);
+            if (closestSnappingPoint != null) {
+                this.stickTo(o, closestSnappingPoint);
             } else {
                 this.unstickFrom(o);
             }
@@ -357,17 +372,26 @@ class ShapeObject extends CanvasObject {
     }
 
     isCloseOf(o) {
-        let distance;
-        if (o.direction === Constants.HORIZONTAL) {
-            distance = o.position - this.position.y;
-        } else {
-            distance = o.position - this.position.x;
+        let minDistance = Infinity;
+        let closest = null;
+
+        for (let p of this.snapPoints) {
+            let distance;
+            if (o.direction === Constants.HORIZONTAL) {
+                distance = Math.abs(o.position - this.position.y - p.y);
+            } else {
+                distance = Math.abs(o.position - this.position.x - p.x);
+            }
+            if (distance < 15 && distance < minDistance) {
+                minDistance = distance;
+                closest = p;
+            }
         }
-        return Math.abs(distance) < 15;
+        return closest;
     }
 
-    stickTo(o) {
-        o.addDependance(this);
+    stickTo(o, snapPoint) {
+        o.addDependance(this, snapPoint);
     }
 
     unstickFrom(o) {
@@ -468,12 +492,17 @@ function onKeyDown(e) {
                 selectAll();
                 return false;
             }
+            break;
         case 'd':
             if (e.ctrlKey) {
                 e.preventDefault();
                 unselectAll();
                 return false;
             }
+            break;
+        case 'm':
+            switchMode();
+            break;
     }
 }
 
@@ -1103,7 +1132,7 @@ class DistributeLine extends Function {
 
 }
 
-let mode = Modes.COMMANDS;
+let mode = Modes.STICKYLINE;
 
 function createToolbox() {
     toolbox = document.createElement('div');
@@ -1132,6 +1161,17 @@ function createToolbox() {
     for (let tool of tools) {
         tool.appendTo(toolbox);
     }
+}
+
+function switchMode() {
+    mode = (mode === Modes.STICKYLINE) ? Modes.COMMANDS : Modes.STICKYLINE;
+    tools = [];
+    destroyToolbox();
+    createToolbox();
+}
+
+function destroyToolbox() {
+    toolbox.innerHTML = '';
 }
 
 createToolbox();
